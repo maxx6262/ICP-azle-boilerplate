@@ -18,6 +18,25 @@
           "content": "azle"
         }
       ]
+    },
+    "users": {
+      "type": "custom",
+      "main": "src/Users/user.ts",
+      "candid": "src/Users/users.did",
+      "candid_gen": "http",
+      "build": "npx azle users",
+      "wasm": ".azle/users/users.wasm",
+      "gzip": true,
+      "metadata": [
+        {,
+          "name": "candid:service",
+          "path": "src/Users/users.did"
+        },
+        {
+          "name": "cdk:name",
+          "content": "azle"
+        }
+      ]
     }
   }
 }
