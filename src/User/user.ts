@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { StableBTreeMap, Vec, Result, ic } from "azle";
+import { StableBTreeMap, Vec, Result, ic , Opt} from "azle";
+import e from "express";
 
 /**
  * `userStorage` - it's a key-value datastructure that is used to store users.
@@ -52,7 +53,17 @@ export function getUsers(): Vec<User> {
 }
 
 /**
- * @name checkId
+ * @name getUser
+ * @param id //string
+ * @description load User matching id
+ * @return Opt<User>
+ */
+export function getUser(id: string): Opt<User> {
+    return usersStorage.get(id);
+}
+
+/**
+ * @name checkUserId
  * @param id: string
  * @description check existence of user matching id
  * @return boolean
@@ -62,22 +73,23 @@ export function checkUser(id: string): boolean {
 }
 
 /**
- * @name getUser
- * @param id: string
- * @description load User matching id
- * @return Result<User, string>
+ * @name checkPseudo
+ * @param pseudo //string
+ * @return boolean
+ * @description It returns existence of pseudo from storedUsers
  */
-export function getUser(id: string): Result<any, string> {
-    const user = Result.Ok(usersStorage.get(id).Some);
-    if (!checkUser(id)) {
-        return Result.Err(`no user found matching id=${id}`!);
+export function checkPseudo(pseudo: string): boolean {
+    for (let user of usersStorage.values()) {
+        if (user.pseudo === pseudo) {
+            return true;
+        }
     }
-    return Result.Ok(user);
+    return false;
 }
 
 /**
  * @name addUser
- * @param user: UserPayload
+ * @param user //UserPayload
  * @description add new User on storage
  * @return User
  */
@@ -96,29 +108,35 @@ export function addUser(user: UserPayload): User {
  * @name updateUser
  * @param {id: string, user: UserPayload}
  * @description update user data matching id
- * @return Result<User, string>
+ * @return Opt<User>
  */
-export function updateUser(id: string, user: UserPayload): Result<any, string> {
-    const storedUser = usersStorage.get(id).Some;
-    if (!checkUser(id)) {
-        Result.Err(`no user matching id=${id} found`);
+export function updateUser(id: string, user: UserPayload): Opt<User> {
+    const storedUser = usersStorage.get(id);
+    if (storedUser.Some) {
+        const updatedUser: User = {
+            ...storedUser.Some,
+            ...user,
+            updatedAt: getCurrentDate()
+        };
+        usersStorage.insert(updatedUser.id, updatedUser);
     }
-    const updatedUser: User = {
-        id: id,
-        ...storedUser,
-        ...user,
-        updatedAt: getCurrentDate()
-    };
-    usersStorage.insert(id, updatedUser);
-    return Result.Ok(updatedUser);
+    return usersStorage.get(id);
 }
 
-
+/**
+ * @name removeUser
+ * @param id: string
+ * @description delete user matching id from data storage
+ * @return deletedUser: User
+ */
+export function removeUser(id: string): Opt<User> {
+    return usersStorage.remove(id);
+}
 
 /**
  * Internal functions
  */
 function getCurrentDate(): Date {
-    const timestamp: Number = new Number(ic.time());
+    const timestamp = new Number(ic.time());
     return new Date(timestamp.valueOf() / 100_000);
 }
